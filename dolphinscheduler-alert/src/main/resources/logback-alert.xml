@@ -31,10 +31,9 @@
 
     <appender name="ALERTLOGFILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${log.base}/dolphinscheduler-alert.log</file>
-        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${log.base}/dolphinscheduler-alert.%d{yyyy-MM-dd_HH}.%i.log</fileNamePattern>
-            <maxHistory>20</maxHistory>
-            <maxFileSize>64MB</maxFileSize>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${log.base}/alert/dolphinscheduler-alert_%d{yyyy-MM-dd_HH}.log</fileNamePattern>
+            <maxHistory>3</maxHistory>
         </rollingPolicy>
         <encoder>
             <pattern>

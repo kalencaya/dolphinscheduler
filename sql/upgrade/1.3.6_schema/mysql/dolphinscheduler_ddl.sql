@@ -49,7 +49,7 @@ BEGIN
         AND TABLE_SCHEMA=(SELECT DATABASE())
         AND COLUMN_NAME ='entry_id')
     THEN
-        ALTER TABLE QRTZ_FIRED_TRIGGERS MODIFY COLUMN `entry_id` varchar(200);
+        ALTER TABLE QRTZ_FIRED_TRIGGERS MODIFY COLUMN `entry_id` varchar(100);
     END IF;
 END;
 
