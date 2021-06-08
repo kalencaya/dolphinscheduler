@@ -107,6 +107,8 @@ public class WorkerServer implements IStoppable {
      * @param args arguments
      */
     public static void main(String[] args) {
+        System.setProperty("logging.config", "classpath:logback-worker.xml");
+        System.setProperty("druid.mysql.usePingMethod", "false");
         Thread.currentThread().setName(Constants.THREAD_NAME_WORKER_SERVER);
         new SpringApplicationBuilder(WorkerServer.class).web(WebApplicationType.NONE).run(args);
     }

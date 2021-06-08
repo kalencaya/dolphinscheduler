@@ -98,6 +98,8 @@ public class MasterServer implements IStoppable {
      * @param args arguments
      */
     public static void main(String[] args) {
+        System.setProperty("logging.config", "classpath:logback-master.xml");
+        System.setProperty("druid.mysql.usePingMethod", "false");
         Thread.currentThread().setName(Constants.THREAD_NAME_MASTER_SERVER);
         new SpringApplicationBuilder(MasterServer.class).web(WebApplicationType.NONE).run(args);
     }

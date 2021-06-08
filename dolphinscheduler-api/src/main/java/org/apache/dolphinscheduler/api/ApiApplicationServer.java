@@ -31,6 +31,8 @@ import org.springframework.context.annotation.FilterType;
 public class ApiApplicationServer extends SpringBootServletInitializer {
 
     public static void main(String[] args) {
+        System.setProperty("logging.config", "classpath:logback-api.xml");
+        System.setProperty("spring.profiles.active", "api");
         SpringApplication.run(ApiApplicationServer.class, args);
     }
 
