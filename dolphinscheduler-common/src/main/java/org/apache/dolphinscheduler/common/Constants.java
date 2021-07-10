@@ -185,38 +185,43 @@ public final class Constants {
     /**
      * MasterServer directory registered in zookeeper
      */
-    public static final String ZOOKEEPER_DOLPHINSCHEDULER_MASTERS = "/nodes/master";
+    public static final String REGISTRY_DOLPHINSCHEDULER_MASTERS = "/nodes/master";
 
     /**
      * WorkerServer directory registered in zookeeper
      */
-    public static final String ZOOKEEPER_DOLPHINSCHEDULER_WORKERS = "/nodes/worker";
+    public static final String REGISTRY_DOLPHINSCHEDULER_WORKERS = "/nodes/worker";
 
     /**
      * all servers directory registered in zookeeper
      */
-    public static final String ZOOKEEPER_DOLPHINSCHEDULER_DEAD_SERVERS = "/dead-servers";
+    public static final String REGISTRY_DOLPHINSCHEDULER_DEAD_SERVERS = "/dead-servers";
+
+    /**
+     * registry node prefix
+     */
+    public static final String REGISTRY_DOLPHINSCHEDULER_NODE = "/nodes";
 
     /**
      * MasterServer lock directory registered in zookeeper
      */
-    public static final String ZOOKEEPER_DOLPHINSCHEDULER_LOCK_MASTERS = "/lock/masters";
+    public static final String REGISTRY_DOLPHINSCHEDULER_LOCK_MASTERS = "/lock/masters";
 
 
     /**
      * MasterServer failover directory registered in zookeeper
      */
-    public static final String ZOOKEEPER_DOLPHINSCHEDULER_LOCK_FAILOVER_MASTERS = "/lock/failover/masters";
+    public static final String REGISTRY_DOLPHINSCHEDULER_LOCK_FAILOVER_MASTERS = "/lock/failover/masters";
 
     /**
      * WorkerServer failover directory registered in zookeeper
      */
-    public static final String ZOOKEEPER_DOLPHINSCHEDULER_LOCK_FAILOVER_WORKERS = "/lock/failover/workers";
+    public static final String REGISTRY_DOLPHINSCHEDULER_LOCK_FAILOVER_WORKERS = "/lock/failover/workers";
 
     /**
      * MasterServer startup  failover runing and fault tolerance process
      */
-    public static final String ZOOKEEPER_DOLPHINSCHEDULER_LOCK_FAILOVER_STARTUP_MASTERS = "/lock/failover/startup-masters";
+    public static final String REGISTRY_DOLPHINSCHEDULER_LOCK_FAILOVER_STARTUP_MASTERS = "/lock/failover/startup-masters";
 
 
     /**
@@ -526,6 +531,11 @@ public final class Constants {
     public static final int SLEEP_TIME_MILLIS = 1000;
 
     /**
+     * master task instance cache-database refresh interval
+     */
+    public static final int CACHE_REFRESH_TIME_MILLIS = 20 * 1000;
+
+    /**
      * heartbeat for zk info length
      */
     public static final int HEARTBEAT_FOR_ZOOKEEPER_INFO_LENGTH = 10;
@@ -651,6 +661,16 @@ public final class Constants {
     public static final String PARAMETER_BUSINESS_DATE = "system.biz.date";
 
     /**
+     * the absolute path of current executing task
+     */
+    public static final String PARAMETER_TASK_EXECUTE_PATH = "system.task.execute.path";
+
+    /**
+     * the instance id of current task
+     */
+    public static final String PARAMETER_TASK_INSTANCE_ID = "system.task.instance.id";
+
+    /**
      * ACCEPTED
      */
     public static final String ACCEPTED = "ACCEPTED";
@@ -770,8 +790,8 @@ public final class Constants {
      */
     public static final String MASTER_TYPE = "master";
     public static final String WORKER_TYPE = "worker";
-    public static final String DELETE_ZK_OP = "delete";
-    public static final String ADD_ZK_OP = "add";
+    public static final String DELETE_OP = "delete";
+    public static final String ADD_OP = "add";
     public static final String ALIAS = "alias";
     public static final String CONTENT = "content";
     public static final String DEPENDENT_SPLIT = ":||";
@@ -853,6 +873,7 @@ public final class Constants {
     public static final String FLINK_MAIN_CLASS = "-c";
     public static final String FLINK_PARALLELISM = "-p";
     public static final String FLINK_SHUTDOWN_ON_ATTACHED_EXIT = "-sae";
+    public static final String FLINK_PYTHON = "-py";
 
 
     public static final int[] NOT_TERMINATED_STATES = new int[] {
@@ -862,8 +883,8 @@ public final class Constants {
         ExecutionStatus.READY_PAUSE.ordinal(),
         ExecutionStatus.READY_STOP.ordinal(),
         ExecutionStatus.NEED_FAULT_TOLERANCE.ordinal(),
-        ExecutionStatus.WAITTING_THREAD.ordinal(),
-        ExecutionStatus.WAITTING_DEPEND.ordinal()
+        ExecutionStatus.WAITING_THREAD.ordinal(),
+        ExecutionStatus.WAITING_DEPEND.ordinal()
     };
 
     /**
@@ -988,7 +1009,7 @@ public final class Constants {
     /**
      * dataSource sensitive param
      */
-    public static final String DATASOURCE_PASSWORD_REGEX = "(?<=(\"password\":\")).*?(?=(\"))";
+    public static final String DATASOURCE_PASSWORD_REGEX = "(?<=((?i)password((\\\\\":\\\\\")|(=')))).*?(?=((\\\\\")|(')))";
 
     /**
      * default worker group
