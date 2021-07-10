@@ -35,8 +35,6 @@ import org.apache.dolphinscheduler.server.worker.task.AbstractTask;
 import org.apache.dolphinscheduler.server.worker.task.CommandExecuteResult;
 import org.apache.dolphinscheduler.server.worker.task.ShellCommandExecutor;
 
-import org.slf4j.Logger;
-
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -50,6 +48,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import org.slf4j.Logger;
 
 /**
  * shell task
@@ -101,12 +101,12 @@ public class ShellTask extends AbstractTask {
     public void handle() throws Exception {
         try {
             // construct process
-            CommandExecuteResult commandExecuteResult = shellCommandExecutor.run(buildCommand());
+            String command = buildCommand();
+            CommandExecuteResult commandExecuteResult = shellCommandExecutor.run(command);
             setExitStatusCode(commandExecuteResult.getExitStatusCode());
             setAppIds(commandExecuteResult.getAppIds());
             setProcessId(commandExecuteResult.getProcessId());
-            setResult(shellCommandExecutor.getTaskResultString());
-            setVarPool(shellCommandExecutor.getVarPool());
+            shellParameters.dealOutParam(shellCommandExecutor.getVarPool());
         } catch (Exception e) {
             logger.error("shell task error", e);
             setExitStatusCode(Constants.EXIT_CODE_FAILURE);
@@ -166,11 +166,8 @@ public class ShellTask extends AbstractTask {
 
     private String parseScript(String script) {
         // combining local and global parameters
-        Map<String, Property> paramsMap = ParamUtils.convert(ParamUtils.getUserDefParamsMap(taskExecutionContext.getDefinedParams()),
-            taskExecutionContext.getDefinedParams(),
-            shellParameters.getLocalParametersMap(),
-            CommandType.of(taskExecutionContext.getCmdTypeIfComplement()),
-            taskExecutionContext.getScheduleTime());
+        Map<String, Property> paramsMap = ParamUtils.convert(taskExecutionContext,shellParameters);
+
         // replace variable TIME with $[YYYYmmddd...] in shell file when history run job and batch complement job
         if (taskExecutionContext.getScheduleTime() != null) {
             if (paramsMap == null) {
@@ -187,18 +184,5 @@ public class ShellTask extends AbstractTask {
             paramsMap.put(Constants.PARAMETER_DATETIME, p);
         }
         return ParameterUtils.convertParameterPlaceholders(script, ParamUtils.convert(paramsMap));
-    }
-
-    public void setResult(String result) {
-        Map<String, Property> localParams = shellParameters.getLocalParametersMap();
-        List<Map<String, String>> outProperties = new ArrayList<>();
-        Map<String, String> p = new HashMap<>();
-        localParams.forEach((k,v) -> {
-            if (v.getDirect() == Direct.OUT) {
-                p.put(k, result);
-            }
-        });
-        outProperties.add(p);
-        resultString = JSONUtils.toJsonString(outProperties);
     }
 }
