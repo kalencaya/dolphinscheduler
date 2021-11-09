@@ -33,7 +33,6 @@ import org.apache.dolphinscheduler.remote.command.TaskExecuteAckCommand;
 import org.apache.dolphinscheduler.remote.command.TaskExecuteRequestCommand;
 import org.apache.dolphinscheduler.remote.processor.NettyRemoteChannel;
 import org.apache.dolphinscheduler.remote.processor.NettyRequestProcessor;
-import org.apache.dolphinscheduler.server.entity.TaskExecutionContext;
 import org.apache.dolphinscheduler.server.utils.LogUtils;
 import org.apache.dolphinscheduler.server.worker.cache.ResponceCache;
 import org.apache.dolphinscheduler.server.worker.config.WorkerConfig;
@@ -42,6 +41,7 @@ import org.apache.dolphinscheduler.server.worker.runner.TaskExecuteThread;
 import org.apache.dolphinscheduler.server.worker.runner.WorkerManagerThread;
 import org.apache.dolphinscheduler.service.alert.AlertClientService;
 import org.apache.dolphinscheduler.service.bean.SpringApplicationContext;
+import org.apache.dolphinscheduler.service.queue.entity.TaskExecutionContext;
 import org.apache.dolphinscheduler.spi.task.TaskExecutionContextCacheManager;
 import org.apache.dolphinscheduler.spi.task.request.TaskRequest;
 
@@ -148,11 +148,9 @@ public class TaskExecuteProcessor implements NettyRequestProcessor {
                 OSUtils.createUserIfAbsent(taskExecutionContext.getTenantCode());
             }
         } catch (Throwable ex) {
-            String errorLog = String.format("create execLocalPath : %s", execLocalPath);
-            LoggerUtils.logError(Optional.of(logger), errorLog, ex);
+            logger.error("create execLocalPath: {}", execLocalPath, ex);
             TaskExecutionContextCacheManager.removeByTaskInstanceId(taskExecutionContext.getTaskInstanceId());
         }
-        FileUtils.taskLoggerThreadLocal.remove();
 
         taskCallbackService.addRemoteChannel(taskExecutionContext.getTaskInstanceId(),
                 new NettyRemoteChannel(channel, command.getOpaque()));
@@ -172,7 +170,7 @@ public class TaskExecuteProcessor implements NettyRequestProcessor {
 
         // submit task to manager
         if (!workerManager.offer(new TaskExecuteThread(taskExecutionContext, taskCallbackService, alertClientService, taskPluginManager))) {
-            logger.info("submit task to manager error, queue is full, queue size is {}", workerManager.getQueueSize());
+            logger.info("submit task to manager error, queue is full, queue size is {}", workerManager.getDelayQueueSize());
         }
     }
 

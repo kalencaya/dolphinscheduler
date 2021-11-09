@@ -28,6 +28,7 @@ import org.apache.dolphinscheduler.server.worker.config.WorkerConfig;
 import org.apache.dolphinscheduler.server.worker.plugin.TaskPluginManager;
 import org.apache.dolphinscheduler.server.worker.processor.DBTaskAckProcessor;
 import org.apache.dolphinscheduler.server.worker.processor.DBTaskResponseProcessor;
+import org.apache.dolphinscheduler.server.worker.processor.HostUpdateProcessor;
 import org.apache.dolphinscheduler.server.worker.processor.TaskExecuteProcessor;
 import org.apache.dolphinscheduler.server.worker.processor.TaskKillProcessor;
 import org.apache.dolphinscheduler.server.worker.registry.WorkerRegistryClient;
@@ -35,7 +36,7 @@ import org.apache.dolphinscheduler.server.worker.runner.RetryReportTaskStatusThr
 import org.apache.dolphinscheduler.server.worker.runner.WorkerManagerThread;
 import org.apache.dolphinscheduler.service.alert.AlertClientService;
 import org.apache.dolphinscheduler.service.bean.SpringApplicationContext;
-import org.apache.dolphinscheduler.spi.exception.PluginNotFoundException;
+import org.apache.dolphinscheduler.spi.exception.PluginException;
 import org.apache.dolphinscheduler.spi.plugin.DolphinPluginLoader;
 import org.apache.dolphinscheduler.spi.plugin.DolphinPluginManagerConfig;
 import org.apache.dolphinscheduler.spi.utils.StringUtils;
@@ -81,12 +82,6 @@ public class WorkerServer implements IStoppable {
     private NettyRemotingServer nettyRemotingServer;
 
     /**
-     * worker registry
-     */
-    @Autowired
-    private WorkerRegistryClient workerRegistryClient;
-
-    /**
      * worker config
      */
     @Autowired
@@ -109,6 +104,12 @@ public class WorkerServer implements IStoppable {
 
     @Autowired
     private WorkerManagerThread workerManagerThread;
+
+    /**
+     * worker registry
+     */
+    @Autowired
+    private WorkerRegistryClient workerRegistryClient;
 
     private TaskPluginManager taskPluginManager;
 
@@ -140,6 +141,7 @@ public class WorkerServer implements IStoppable {
         this.nettyRemotingServer.registerProcessor(CommandType.TASK_KILL_REQUEST, new TaskKillProcessor());
         this.nettyRemotingServer.registerProcessor(CommandType.DB_TASK_ACK, new DBTaskAckProcessor());
         this.nettyRemotingServer.registerProcessor(CommandType.DB_TASK_RESPONSE, new DBTaskResponseProcessor());
+        this.nettyRemotingServer.registerProcessor(CommandType.PROCESS_HOST_UPDATE_REQUEST, new HostUpdateProcessor());
         this.nettyRemotingServer.start();
 
         // worker registry
@@ -190,7 +192,7 @@ public class WorkerServer implements IStoppable {
             throw new RuntimeException("Load Task Plugin Failed !", e);
         }
         if (MapUtils.isEmpty(taskPluginManager.getTaskChannelMap())) {
-            throw new PluginNotFoundException("Task Plugin Not Found,Please Check Config File");
+            throw new PluginException("Task Plugin Not Found,Please Check Config File");
         }
     }
 
