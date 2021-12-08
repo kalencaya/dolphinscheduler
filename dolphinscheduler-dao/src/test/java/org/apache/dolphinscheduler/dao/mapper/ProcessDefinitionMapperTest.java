@@ -318,18 +318,13 @@ public class ProcessDefinitionMapperTest extends BaseDaoTest {
 
         Long[] projectCodes = new Long[1];
         projectCodes[0] = processDefinition.getProjectCode();
-        List<DefinitionGroupByUser> processDefinitions = processDefinitionMapper.countDefinitionGroupByUser(
-                processDefinition.getUserId(),
-                projectCodes,
-                user.getUserType() == UserType.ADMIN_USER
-        );
+        List<DefinitionGroupByUser> processDefinitions = processDefinitionMapper.countDefinitionByProjectCodes(projectCodes);
         Assert.assertNotEquals(processDefinitions.size(), 0);
     }
 
     @Test
     public void listResourcesTest() {
         ProcessDefinition processDefinition = insertOne("def 1");
-        processDefinition.setResourceIds("3,5");
         processDefinition.setReleaseState(ReleaseState.ONLINE);
         List<Map<String, Object>> maps = processDefinitionMapper.listResources();
         Assert.assertNotNull(maps);
@@ -338,7 +333,6 @@ public class ProcessDefinitionMapperTest extends BaseDaoTest {
     @Test
     public void listResourcesByUserTest() {
         ProcessDefinition processDefinition = insertOne("def 1");
-        processDefinition.setResourceIds("3,5");
         processDefinition.setReleaseState(ReleaseState.ONLINE);
         List<Map<String, Object>> maps = processDefinitionMapper.listResourcesByUser(processDefinition.getUserId());
         Assert.assertNotNull(maps);

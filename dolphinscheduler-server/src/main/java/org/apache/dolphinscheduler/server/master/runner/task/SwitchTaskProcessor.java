@@ -31,7 +31,6 @@ import org.apache.dolphinscheduler.dao.entity.TaskInstance;
 import org.apache.dolphinscheduler.server.master.config.MasterConfig;
 import org.apache.dolphinscheduler.server.utils.LogUtils;
 import org.apache.dolphinscheduler.server.utils.SwitchTaskUtils;
-import org.apache.dolphinscheduler.service.bean.SpringApplicationContext;
 
 import org.apache.commons.lang.StringUtils;
 
@@ -43,6 +42,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+@Service
 public class SwitchTaskProcessor extends BaseTaskProcessor {
 
     protected final String rgex = "['\"]*\\$\\{(.*?)\\}['\"]*";
@@ -52,7 +55,8 @@ public class SwitchTaskProcessor extends BaseTaskProcessor {
     private ProcessInstance processInstance;
     TaskDefinition taskDefinition;
 
-    MasterConfig masterConfig = SpringApplicationContext.getBean(MasterConfig.class);
+    @Autowired
+    private MasterConfig masterConfig;
 
     /**
      * switch result
@@ -63,7 +67,7 @@ public class SwitchTaskProcessor extends BaseTaskProcessor {
     public boolean submit(TaskInstance taskInstance, ProcessInstance processInstance, int masterTaskCommitRetryTimes, int masterTaskCommitInterval) {
 
         this.processInstance = processInstance;
-        this.taskInstance = processService.submitTask(taskInstance, masterTaskCommitRetryTimes, masterTaskCommitInterval);
+        this.taskInstance = processService.submitTaskWithRetry(processInstance, taskInstance, masterTaskCommitRetryTimes, masterTaskCommitInterval);
 
         if (this.taskInstance == null) {
             return false;
@@ -71,10 +75,11 @@ public class SwitchTaskProcessor extends BaseTaskProcessor {
         taskDefinition = processService.findTaskDefinition(
                 taskInstance.getTaskCode(), taskInstance.getTaskDefinitionVersion()
         );
-        taskInstance.setLogPath(LogUtils.getTaskLogPath(processInstance.getProcessDefinitionCode(),
+        taskInstance.setLogPath(LogUtils.getTaskLogPath(taskInstance.getFirstSubmitTime(),processInstance.getProcessDefinitionCode(),
                 processInstance.getProcessDefinitionVersion(),
                 taskInstance.getProcessInstanceId(),
                 taskInstance.getId()));
+        setTaskExecutionLogger();
         taskInstance.setHost(NetUtils.getAddr(masterConfig.getListenPort()));
         taskInstance.setState(ExecutionStatus.RUNNING_EXECUTION);
         taskInstance.setStartTime(new Date());
@@ -210,7 +215,7 @@ public class SwitchTaskProcessor extends BaseTaskProcessor {
             if (!org.apache.commons.lang.math.NumberUtils.isNumber(value)) {
                 value = "\"" + value + "\"";
             }
-            logger.info("paramName：{}，paramValue{}", paramName, value);
+            logger.info("paramName:{}，paramValue:{}", paramName, value);
             content = content.replace("${" + paramName + "}", value);
         }
         return content;

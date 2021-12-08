@@ -31,6 +31,7 @@ import org.apache.dolphinscheduler.common.task.sqoop.sources.SourceMysqlParamete
 import org.apache.dolphinscheduler.common.task.sqoop.targets.TargetMysqlParameter;
 import org.apache.dolphinscheduler.common.utils.HadoopUtils;
 import org.apache.dolphinscheduler.common.utils.JSONUtils;
+import org.apache.dolphinscheduler.common.utils.LoggerUtils;
 import org.apache.dolphinscheduler.common.utils.TaskParametersUtils;
 import org.apache.dolphinscheduler.dao.entity.DataSource;
 import org.apache.dolphinscheduler.dao.entity.ProcessInstance;
@@ -39,7 +40,6 @@ import org.apache.dolphinscheduler.dao.entity.TaskInstance;
 import org.apache.dolphinscheduler.dao.entity.Tenant;
 import org.apache.dolphinscheduler.dao.entity.UdfFunc;
 import org.apache.dolphinscheduler.server.builder.TaskExecutionContextBuilder;
-import org.apache.dolphinscheduler.service.bean.SpringApplicationContext;
 import org.apache.dolphinscheduler.service.process.ProcessService;
 import org.apache.dolphinscheduler.service.queue.entity.TaskExecutionContext;
 import org.apache.dolphinscheduler.spi.enums.ResourceType;
@@ -61,6 +61,7 @@ import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import com.google.common.base.Enums;
 import com.google.common.base.Strings;
@@ -79,7 +80,8 @@ public abstract class BaseTaskProcessor implements ITaskProcessor {
 
     protected ProcessInstance processInstance;
 
-    protected ProcessService processService = SpringApplicationContext.getBean(ProcessService.class);
+    @Autowired
+    protected ProcessService processService;
 
     /**
      * pause task, common tasks donot need this.
@@ -97,6 +99,7 @@ public abstract class BaseTaskProcessor implements ITaskProcessor {
 
     /**
      * task timeout process
+     *
      * @return
      */
     protected abstract boolean taskTimeout();
@@ -116,7 +119,7 @@ public abstract class BaseTaskProcessor implements ITaskProcessor {
             case TIMEOUT:
                 return timeout();
             default:
-                logger.error("unknown task action: {}", taskAction.toString());
+                logger.error("unknown task action: {}", taskAction);
 
         }
         return false;
@@ -154,6 +157,11 @@ public abstract class BaseTaskProcessor implements ITaskProcessor {
         return null;
     }
 
+    @Override
+    public void dispatch(TaskInstance taskInstance, ProcessInstance processInstance) {
+
+    }
+
     /**
      * get TaskExecutionContext
      *
@@ -161,8 +169,6 @@ public abstract class BaseTaskProcessor implements ITaskProcessor {
      * @return TaskExecutionContext
      */
     protected TaskExecutionContext getTaskExecutionContext(TaskInstance taskInstance) {
-        processService.setTaskInstanceDetail(taskInstance);
-
         int userId = taskInstance.getProcessDefine() == null ? 0 : taskInstance.getProcessDefine().getUserId();
         Tenant tenant = processService.getTenantForProcess(taskInstance.getProcessInstance().getTenantId(), userId);
 
@@ -172,12 +178,12 @@ public abstract class BaseTaskProcessor implements ITaskProcessor {
                     taskInstance.getStartTime(),
                     taskInstance.getHost(),
                     null,
-                    null,
-                    taskInstance.getId());
+                    null
+            );
             return null;
         }
         // set queue for process instance, user-specified queue takes precedence over tenant queue
-        String userQueue = processService.queryUserQueueByProcessInstanceId(taskInstance.getProcessInstanceId());
+        String userQueue = processService.queryUserQueueByProcessInstance(taskInstance.getProcessInstance());
         taskInstance.getProcessInstance().setQueue(StringUtils.isEmpty(userQueue) ? tenant.getQueue() : userQueue);
         taskInstance.getProcessInstance().setTenantCode(tenant.getTenantCode());
         taskInstance.setResources(getResourceFullNames(taskInstance));
@@ -219,10 +225,22 @@ public abstract class BaseTaskProcessor implements ITaskProcessor {
     }
 
     /**
+     * set master task running logger.
+     */
+    public void setTaskExecutionLogger() {
+        logger = LoggerFactory.getLogger(LoggerUtils.buildTaskId(LoggerUtils.TASK_LOGGER_INFO_PREFIX,
+                taskInstance.getFirstSubmitTime(),
+                processInstance.getProcessDefinitionCode(),
+                processInstance.getProcessDefinitionVersion(),
+                taskInstance.getProcessInstanceId(),
+                taskInstance.getId()));
+    }
+
+    /**
      * set procedure task relation
      *
      * @param procedureTaskExecutionContext procedureTaskExecutionContext
-     * @param taskInstance taskInstance
+     * @param taskInstance                  taskInstance
      */
     private void setProcedureTaskRelation(ProcedureTaskExecutionContext procedureTaskExecutionContext, TaskInstance taskInstance) {
         ProcedureParameters procedureParameters = JSONUtils.parseObject(taskInstance.getTaskParams(), ProcedureParameters.class);
@@ -235,7 +253,7 @@ public abstract class BaseTaskProcessor implements ITaskProcessor {
      * set datax task relation
      *
      * @param dataxTaskExecutionContext dataxTaskExecutionContext
-     * @param taskInstance taskInstance
+     * @param taskInstance              taskInstance
      */
     protected void setDataxTaskRelation(DataxTaskExecutionContext dataxTaskExecutionContext, TaskInstance taskInstance) {
         DataxParameters dataxParameters = JSONUtils.parseObject(taskInstance.getTaskParams(), DataxParameters.class);
@@ -260,7 +278,7 @@ public abstract class BaseTaskProcessor implements ITaskProcessor {
      * set sqoop task relation
      *
      * @param sqoopTaskExecutionContext sqoopTaskExecutionContext
-     * @param taskInstance taskInstance
+     * @param taskInstance              taskInstance
      */
     private void setSqoopTaskRelation(SqoopTaskExecutionContext sqoopTaskExecutionContext, TaskInstance taskInstance) {
         SqoopParameters sqoopParameters = JSONUtils.parseObject(taskInstance.getTaskParams(), SqoopParameters.class);
@@ -291,7 +309,7 @@ public abstract class BaseTaskProcessor implements ITaskProcessor {
      * set SQL task relation
      *
      * @param sqlTaskExecutionContext sqlTaskExecutionContext
-     * @param taskInstance taskInstance
+     * @param taskInstance            taskInstance
      */
     private void setSQLTaskRelation(SQLTaskExecutionContext sqlTaskExecutionContext, TaskInstance taskInstance) {
         SqlParameters sqlParameters = JSONUtils.parseObject(taskInstance.getTaskParams(), SqlParameters.class);
@@ -303,7 +321,7 @@ public abstract class BaseTaskProcessor implements ITaskProcessor {
 
         // whether udf type
         boolean udfTypeFlag = Enums.getIfPresent(UdfType.class, Strings.nullToEmpty(sqlParameters.getType())).isPresent()
-            && !StringUtils.isEmpty(sqlParameters.getUdfs());
+                && !StringUtils.isEmpty(sqlParameters.getUdfs());
 
         if (udfTypeFlag) {
             String[] udfFunIds = sqlParameters.getUdfs().split(",");
@@ -327,7 +345,7 @@ public abstract class BaseTaskProcessor implements ITaskProcessor {
     /**
      * whehter tenant is null
      *
-     * @param tenant tenant
+     * @param tenant       tenant
      * @param taskInstance taskInstance
      * @return result
      */

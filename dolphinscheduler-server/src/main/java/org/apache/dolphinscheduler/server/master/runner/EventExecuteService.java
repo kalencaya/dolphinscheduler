@@ -19,6 +19,7 @@ package org.apache.dolphinscheduler.server.master.runner;
 
 import org.apache.dolphinscheduler.common.Constants;
 import org.apache.dolphinscheduler.common.enums.ExecutionStatus;
+import org.apache.dolphinscheduler.common.enums.Flag;
 import org.apache.dolphinscheduler.common.enums.StateEvent;
 import org.apache.dolphinscheduler.common.enums.StateEventType;
 import org.apache.dolphinscheduler.common.thread.Stopper;
@@ -81,7 +82,7 @@ public class EventExecuteService extends Thread {
 
     public void init() {
 
-        eventExecService = ThreadUtils.newDaemonFixedThreadExecutor("MasterEventExecution", masterConfig.getMasterExecThreads());
+        eventExecService = ThreadUtils.newDaemonFixedThreadExecutor("MasterEventExecution", masterConfig.getExecThreads());
 
         listeningExecutorService = MoreExecutors.listeningDecorator(eventExecService);
         this.stateEventCallbackService = SpringApplicationContext.getBean(StateEventCallbackService.class);
@@ -118,6 +119,7 @@ public class EventExecuteService extends Thread {
         for (WorkflowExecuteThread workflowExecuteThread : this.processInstanceExecCacheManager.getAll()) {
             if (workflowExecuteThread.eventSize() == 0
                     || StringUtils.isEmpty(workflowExecuteThread.getKey())
+                    || !workflowExecuteThread.isStart()
                     || eventHandlerMap.containsKey(workflowExecuteThread.getKey())) {
                 continue;
             }
@@ -145,9 +147,11 @@ public class EventExecuteService extends Thread {
                 }
 
                 private void notifyProcessChanged() {
-                    Map<ProcessInstance, TaskInstance> fatherMaps
-                            = processService.notifyProcessList(processInstanceId, 0);
+                    if (Flag.NO == workflowExecuteThread.getProcessInstance().getIsSubProcess()) {
+                        return;
+                    }
 
+                    Map<ProcessInstance, TaskInstance> fatherMaps = processService.notifyProcessList(processInstanceId);
                     for (ProcessInstance processInstance : fatherMaps.keySet()) {
                         String address = NetUtils.getAddr(masterConfig.getListenPort());
                         if (processInstance.getHost().equalsIgnoreCase(address)) {
@@ -186,12 +190,13 @@ public class EventExecuteService extends Thread {
                     StateEventChangeCommand stateEventChangeCommand = new StateEventChangeCommand(
                             processInstanceId, 0, workflowExecuteThread.getProcessInstance().getState(), processInstance.getId(), taskInstance.getId()
                     );
-
                     stateEventCallbackService.sendResult(address, port, stateEventChangeCommand.convert2Command());
                 }
 
                 @Override
                 public void onFailure(Throwable throwable) {
+                    logger.info("handle events {} failed.", processInstanceId);
+                    logger.info("handle events failed.", throwable);
                 }
             };
             Futures.addCallback(future, futureCallback, this.listeningExecutorService);

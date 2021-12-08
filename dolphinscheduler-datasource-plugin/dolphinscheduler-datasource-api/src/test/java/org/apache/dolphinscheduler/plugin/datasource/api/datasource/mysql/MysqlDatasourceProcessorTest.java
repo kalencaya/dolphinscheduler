@@ -19,11 +19,10 @@ package org.apache.dolphinscheduler.plugin.datasource.api.datasource.mysql;
 
 import org.apache.dolphinscheduler.plugin.datasource.api.plugin.DataSourceClientProvider;
 import org.apache.dolphinscheduler.plugin.datasource.api.utils.CommonUtils;
-import org.apache.dolphinscheduler.plugin.datasource.api.utils.DatasourceUtil;
+import org.apache.dolphinscheduler.plugin.datasource.api.utils.DataSourceUtils;
 import org.apache.dolphinscheduler.plugin.datasource.api.utils.PasswordUtils;
 import org.apache.dolphinscheduler.spi.enums.DbType;
 import org.apache.dolphinscheduler.spi.utils.Constants;
-import org.apache.dolphinscheduler.spi.utils.JSONUtils;
 
 import java.sql.DriverManager;
 import java.util.HashMap;
@@ -38,7 +37,7 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({Class.class, DriverManager.class, DatasourceUtil.class, CommonUtils.class, DataSourceClientProvider.class, PasswordUtils.class})
+@PrepareForTest({Class.class, DriverManager.class, DataSourceUtils.class, CommonUtils.class, DataSourceClientProvider.class, PasswordUtils.class})
 public class MysqlDatasourceProcessorTest {
 
     private MysqlDatasourceProcessor mysqlDatasourceProcessor = new MysqlDatasourceProcessor();
@@ -58,7 +57,6 @@ public class MysqlDatasourceProcessorTest {
         PowerMockito.when(PasswordUtils.encodePassword(Mockito.anyString())).thenReturn("test");
         MysqlConnectionParam connectionParams = (MysqlConnectionParam) mysqlDatasourceProcessor
                 .createConnectionParams(mysqlDatasourceParamDTO);
-        System.out.println(JSONUtils.toJsonString(connectionParams));
         Assert.assertEquals("jdbc:mysql://localhost:3306", connectionParams.getAddress());
         Assert.assertEquals("jdbc:mysql://localhost:3306/default", connectionParams.getJdbcUrl());
     }
@@ -75,7 +73,7 @@ public class MysqlDatasourceProcessorTest {
 
     @Test
     public void testGetDatasourceDriver() {
-        Assert.assertEquals(Constants.COM_MYSQL_JDBC_DRIVER, mysqlDatasourceProcessor.getDatasourceDriver());
+        Assert.assertEquals(Constants.COM_MYSQL_CJ_JDBC_DRIVER, mysqlDatasourceProcessor.getDatasourceDriver());
     }
 
     @Test

@@ -23,6 +23,8 @@ import org.apache.dolphinscheduler.common.enums.ReleaseState;
 import org.apache.dolphinscheduler.common.process.Property;
 import org.apache.dolphinscheduler.common.utils.JSONUtils;
 
+import org.apache.commons.lang.StringUtils;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -34,7 +36,6 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 /**
@@ -162,12 +163,6 @@ public class ProcessDefinition {
      */
     @TableField(exist = false)
     private String modifyBy;
-
-    /**
-     * resource ids
-     */
-    @TableField(exist = false)
-    private String resourceIds;
 
     /**
      * warningGroupId
@@ -345,14 +340,6 @@ public class ProcessDefinition {
         this.scheduleReleaseState = scheduleReleaseState;
     }
 
-    public String getResourceIds() {
-        return resourceIds;
-    }
-
-    public void setResourceIds(String resourceIds) {
-        this.resourceIds = resourceIds;
-    }
-
     public int getTimeout() {
         return timeout;
     }
@@ -472,7 +459,6 @@ public class ProcessDefinition {
             + ", tenantId=" + tenantId
             + ", tenantCode='" + tenantCode + '\''
             + ", modifyBy='" + modifyBy + '\''
-            + ", resourceIds='" + resourceIds + '\''
             + ", warningGroupId=" + warningGroupId
             + '}';
     }

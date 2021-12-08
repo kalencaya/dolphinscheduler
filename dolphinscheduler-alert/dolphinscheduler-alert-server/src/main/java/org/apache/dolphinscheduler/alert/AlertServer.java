@@ -20,6 +20,7 @@ package org.apache.dolphinscheduler.alert;
 import static org.apache.dolphinscheduler.common.Constants.ALERT_RPC_PORT;
 
 import org.apache.dolphinscheduler.common.thread.Stopper;
+import org.apache.dolphinscheduler.common.utils.PropertyUtils;
 import org.apache.dolphinscheduler.dao.AlertDao;
 import org.apache.dolphinscheduler.dao.PluginDao;
 import org.apache.dolphinscheduler.dao.entity.Alert;
@@ -38,16 +39,16 @@ import javax.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.ComponentScan;
 
-@SpringBootApplication
+@EnableAutoConfiguration
 @ComponentScan(value = {
     "org.apache.dolphinscheduler.alert",
     "org.apache.dolphinscheduler.dao"
 })
 public class AlertServer implements Closeable {
-    private static final Logger log = LoggerFactory.getLogger(AlertServer.class);
+    private static final Logger logger = LoggerFactory.getLogger(AlertServer.class);
 
     private final PluginDao pluginDao;
     private final AlertDao alertDao;
@@ -71,13 +72,13 @@ public class AlertServer implements Closeable {
 
     @PostConstruct
     public void start() {
-        log.info("Starting Alert server");
+        logger.info("Starting Alert server");
 
         checkTable();
         startServer();
 
         if (alertPluginManager.size() == 0) {
-            log.warn("No alert plugin, alert sender will exit.");
+            logger.warn("No alert plugin, alert sender will exit.");
             return;
         }
 
@@ -93,14 +94,14 @@ public class AlertServer implements Closeable {
 
     private void checkTable() {
         if (!pluginDao.checkPluginDefineTableExist()) {
-            log.error("Plugin Define Table t_ds_plugin_define Not Exist . Please Create it First !");
+            logger.error("Plugin Define Table t_ds_plugin_define Not Exist . Please Create it First !");
             System.exit(1);
         }
     }
 
     private void startServer() {
         NettyServerConfig serverConfig = new NettyServerConfig();
-        serverConfig.setListenPort(ALERT_RPC_PORT);
+        serverConfig.setListenPort(PropertyUtils.getInt(ALERT_RPC_PORT, 50052));
 
         server = new NettyRemotingServer(serverConfig);
         server.registerProcessor(CommandType.ALERT_SEND_REQUEST, alertRequestProcessor);
@@ -118,7 +119,7 @@ public class AlertServer implements Closeable {
                 final List<Alert> alerts = alertDao.listPendingAlerts();
                 alertSender.send(alerts);
             } catch (Exception e) {
-                log.error("Failed to send alert", e);
+                logger.error("Failed to send alert", e);
             }
         }
     }

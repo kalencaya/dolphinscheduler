@@ -19,7 +19,7 @@ package org.apache.dolphinscheduler.plugin.task.sql;
 
 import org.apache.dolphinscheduler.plugin.datasource.api.plugin.DataSourceClientProvider;
 import org.apache.dolphinscheduler.plugin.datasource.api.utils.CommonUtils;
-import org.apache.dolphinscheduler.plugin.datasource.api.utils.DatasourceUtil;
+import org.apache.dolphinscheduler.plugin.datasource.api.utils.DataSourceUtils;
 import org.apache.dolphinscheduler.plugin.task.api.AbstractTaskExecutor;
 import org.apache.dolphinscheduler.plugin.task.api.TaskException;
 import org.apache.dolphinscheduler.plugin.task.util.MapUtils;
@@ -36,9 +36,10 @@ import org.apache.dolphinscheduler.spi.task.paramparser.ParameterUtils;
 import org.apache.dolphinscheduler.spi.task.request.SQLTaskExecutionContext;
 import org.apache.dolphinscheduler.spi.task.request.TaskRequest;
 import org.apache.dolphinscheduler.spi.task.request.UdfFuncRequest;
-import org.apache.dolphinscheduler.spi.utils.CollectionUtils;
 import org.apache.dolphinscheduler.spi.utils.JSONUtils;
 import org.apache.dolphinscheduler.spi.utils.StringUtils;
+
+import org.apache.commons.collections.CollectionUtils;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -132,7 +133,7 @@ public class SqlTask extends AbstractTaskExecutor {
             SQLTaskExecutionContext sqlTaskExecutionContext = taskExecutionContext.getSqlTaskExecutionContext();
 
             // get datasource
-            baseConnectionParam = (BaseConnectionParam) DatasourceUtil.buildConnectionParams(
+            baseConnectionParam = (BaseConnectionParam) DataSourceUtils.buildConnectionParams(
                     DbType.valueOf(sqlParameters.getType()),
                     sqlTaskExecutionContext.getConnectionParams());
 
@@ -288,6 +289,7 @@ public class SqlTask extends AbstractTaskExecutor {
         taskAlertInfo.setAlertGroupId(groupId);
         taskAlertInfo.setContent(content);
         taskAlertInfo.setTitle(title);
+        setTaskAlertInfo(taskAlertInfo);
     }
 
     /**

@@ -33,8 +33,6 @@ import org.apache.dolphinscheduler.dao.entity.TaskInstance;
 import org.apache.dolphinscheduler.server.master.config.MasterConfig;
 import org.apache.dolphinscheduler.server.utils.DependentExecute;
 import org.apache.dolphinscheduler.server.utils.LogUtils;
-import org.apache.dolphinscheduler.service.bean.SpringApplicationContext;
-import org.apache.dolphinscheduler.service.process.ProcessService;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -42,11 +40,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 /**
  * dependent task processor
  */
+@Service
 public class DependentTaskProcessor extends BaseTaskProcessor {
 
     private DependentParameters dependentParameters;
@@ -73,7 +75,8 @@ public class DependentTaskProcessor extends BaseTaskProcessor {
     ProcessInstance processInstance;
     TaskDefinition taskDefinition;
 
-    MasterConfig masterConfig = SpringApplicationContext.getBean(MasterConfig.class);
+    @Autowired
+    private MasterConfig masterConfig;
 
     boolean allDependentItemFinished;
 
@@ -81,7 +84,7 @@ public class DependentTaskProcessor extends BaseTaskProcessor {
     public boolean submit(TaskInstance task, ProcessInstance processInstance, int masterTaskCommitRetryTimes, int masterTaskCommitInterval) {
         this.processInstance = processInstance;
         this.taskInstance = task;
-        this.taskInstance = processService.submitTask(task, masterTaskCommitRetryTimes, masterTaskCommitInterval);
+        this.taskInstance = processService.submitTaskWithRetry(processInstance, task, masterTaskCommitRetryTimes, masterTaskCommitInterval);
 
         if (this.taskInstance == null) {
             return false;
@@ -89,10 +92,12 @@ public class DependentTaskProcessor extends BaseTaskProcessor {
         taskDefinition = processService.findTaskDefinition(
                 taskInstance.getTaskCode(), taskInstance.getTaskDefinitionVersion()
         );
-        taskInstance.setLogPath(LogUtils.getTaskLogPath(processInstance.getProcessDefinitionCode(),
+        taskInstance.setLogPath(LogUtils.getTaskLogPath(taskInstance.getFirstSubmitTime(),
+                processInstance.getProcessDefinitionCode(),
                 processInstance.getProcessDefinitionVersion(),
                 taskInstance.getProcessInstanceId(),
                 taskInstance.getId()));
+        setTaskExecutionLogger();
         taskInstance.setHost(NetUtils.getAddr(masterConfig.getListenPort()));
         taskInstance.setState(ExecutionStatus.RUNNING_EXECUTION);
         taskInstance.setStartTime(new Date());

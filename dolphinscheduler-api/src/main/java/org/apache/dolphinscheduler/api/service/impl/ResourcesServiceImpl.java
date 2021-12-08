@@ -596,7 +596,7 @@ public class ResourcesServiceImpl extends BaseServiceImpl implements ResourcesSe
             if (!HadoopUtils.getInstance().exists(resourcePath)) {
                 createTenantDirIfNotExists(tenantCode);
             }
-            org.apache.dolphinscheduler.api.utils.FileUtils.copyFile(file, localFilename);
+            org.apache.dolphinscheduler.api.utils.FileUtils.copyInputStreamToFile(file, localFilename);
             HadoopUtils.getInstance().copyLocalToHdfs(localFilename, hdfsFilename, true, true);
         } catch (Exception e) {
             FileUtils.deleteFile(localFilename);
@@ -768,7 +768,7 @@ public class ResourcesServiceImpl extends BaseServiceImpl implements ResourcesSe
                     putMsg(result,Status.HDFS_OPERATION_ERROR);
                 }
             } else {
-                putMsg(result,Status.TENANT_NOT_EXIST);
+                putMsg(result,Status.CURRENT_LOGIN_USER_TENANT_NOT_EXIST);
             }
         }
 
@@ -1285,7 +1285,7 @@ public class ResourcesServiceImpl extends BaseServiceImpl implements ResourcesSe
         Tenant tenant = tenantMapper.queryById(user.getTenantId());
         if (tenant == null) {
             logger.error("tenant not exists");
-            putMsg(result, Status.TENANT_NOT_EXIST);
+            putMsg(result, Status.CURRENT_LOGIN_USER_TENANT_NOT_EXIST);
             return null;
         }
         return tenant.getTenantCode();
