@@ -39,11 +39,6 @@ public final class Constants {
     public static final String COMMON_PROPERTIES_PATH = "/common.properties";
 
     /**
-     * alert properties
-     */
-    public static final String ALERT_RPC_PORT = "alert.rpc.port";
-
-    /**
      * registry properties
      */
     public static final String REGISTRY_DOLPHINSCHEDULER_MASTERS = "/nodes/master";
@@ -215,6 +210,11 @@ public final class Constants {
     public static final int SOCKET_TIMEOUT = 60 * 1000;
 
     /**
+     * registry session timeout
+     */
+    public static final int REGISTRY_SESSION_TIMEOUT = 10 * 1000;
+
+    /**
      * http header
      */
     public static final String HTTP_HEADER_UNKNOWN = "unKnown";
@@ -265,6 +265,11 @@ public final class Constants {
      * default admin permission
      */
     public static final int DEFAULT_ADMIN_PERMISSION = 7;
+
+    /**
+     * default hash map size
+     */
+    public static final int DEFAULT_HASH_MAP_SIZE = 16;
 
 
     /**
@@ -350,7 +355,15 @@ public final class Constants {
      */
     public static final String DEFAULT_CRON_STRING = "0 0 0 * * ? *";
 
+    /**
+     * sleep 1000ms
+     */
     public static final int SLEEP_TIME_MILLIS = 1000;
+
+    /**
+     * short sleep 100ms
+     */
+    public static final int SLEEP_TIME_MILLIS_SHORT = 100;
 
     /**
      * one second mils

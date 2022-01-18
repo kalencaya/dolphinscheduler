@@ -22,16 +22,31 @@ package org.apache.dolphinscheduler.e2e.pages.security;
 import org.apache.dolphinscheduler.e2e.pages.common.NavBarPage;
 import org.apache.dolphinscheduler.e2e.pages.common.NavBarPage.NavBarItem;
 
+import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.remote.RemoteWebDriver;
 import org.openqa.selenium.support.FindBy;
 
 import lombok.Getter;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
 @Getter
 public class SecurityPage extends NavBarPage implements NavBarItem {
-    @FindBy(className = "tenant-manage")
+    @FindBy(className = "tab-tenant-manage")
     private WebElement menuTenantManage;
+
+    @FindBy(className = "tab-user-manage")
+    private WebElement menUserManage;
+
+    @FindBy(className = "tab-worker-group-manage")
+    private WebElement menWorkerGroupManage;
+
+    @FindBy(className = "tab-queue-manage")
+    private WebElement menuQueueManage;
+
+    @FindBy(className = "tab-environment-manage")
+    private WebElement menuEnvironmentManage;
 
     public SecurityPage(RemoteWebDriver driver) {
         super(driver);
@@ -39,10 +54,31 @@ public class SecurityPage extends NavBarPage implements NavBarItem {
 
     public <T extends SecurityPage.Tab> T goToTab(Class<T> tab) {
         if (tab == TenantPage.class) {
-            menuTenantManage().click();
+            WebElement menuTenantManageElement = new WebDriverWait(driver, 60)
+                    .until(ExpectedConditions.elementToBeClickable(menuTenantManage));
+            ((JavascriptExecutor)driver).executeScript("arguments[0].click();", menuTenantManageElement);
             return tab.cast(new TenantPage(driver));
         }
-
+        if (tab == UserPage.class) {
+            WebElement menUserManageElement = new WebDriverWait(driver, 60)
+                    .until(ExpectedConditions.elementToBeClickable(menUserManage));
+            ((JavascriptExecutor)driver).executeScript("arguments[0].click();", menUserManageElement);
+            return tab.cast(new UserPage(driver));
+        }
+        if (tab == WorkerGroupPage.class) {
+            WebElement menWorkerGroupManageElement = new WebDriverWait(driver, 60)
+                    .until(ExpectedConditions.elementToBeClickable(menWorkerGroupManage));
+            ((JavascriptExecutor)driver).executeScript("arguments[0].click();", menWorkerGroupManageElement);
+            return tab.cast(new WorkerGroupPage(driver));
+        }
+        if (tab == QueuePage.class) {
+            menuQueueManage().click();
+            return tab.cast(new QueuePage(driver));
+        }
+        if (tab == EnvironmentPage.class) {
+            menuEnvironmentManage().click();
+            return tab.cast(new EnvironmentPage(driver));
+        }
         throw new UnsupportedOperationException("Unknown tab: " + tab.getName());
     }
 

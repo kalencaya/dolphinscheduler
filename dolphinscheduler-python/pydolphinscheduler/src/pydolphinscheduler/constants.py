@@ -72,6 +72,13 @@ class TaskType(str):
     PYTHON = "PYTHON"
     SQL = "SQL"
     SUB_PROCESS = "SUB_PROCESS"
+    PROCEDURE = "PROCEDURE"
+    DATAX = "DATAX"
+    DEPENDENT = "DEPENDENT"
+    CONDITIONS = "CONDITIONS"
+    SWITCH = "SWITCH"
+    FLINK = "FLINK"
+    SPARK = "SPARK"
 
 
 class DefaultTaskCodeNum(str):
@@ -99,6 +106,7 @@ class Delimiter(str):
     DASH = "/"
     COLON = ":"
     UNDERSCORE = "_"
+    DIRECTION = "->"
 
 
 class Time(str):

@@ -24,6 +24,7 @@ from typing import Any, Dict, List, Optional, Set
 from pydolphinscheduler.constants import (
     ProcessDefinitionDefault,
     ProcessDefinitionReleaseState,
+    TaskType,
 )
 from pydolphinscheduler.core.base import Base
 from pydolphinscheduler.exceptions import PyDSParamException, PyDSTaskNoFoundException
@@ -68,7 +69,7 @@ class ProcessDefinition(Base):
         "param",
     }
 
-    _TO_DICT_ATTR = {
+    _DEFINE_ATTR = {
         "name",
         "description",
         "_project",
@@ -97,7 +98,7 @@ class ProcessDefinition(Base):
         worker_group: Optional[str] = ProcessDefinitionDefault.WORKER_GROUP,
         timeout: Optional[int] = 0,
         release_state: Optional[str] = ProcessDefinitionReleaseState.ONLINE,
-        param: Optional[List] = None,
+        param: Optional[Dict] = None,
     ):
         super().__init__(name, description)
         self.schedule = schedule
@@ -190,12 +191,28 @@ class ProcessDefinition(Base):
         self._end_time = val
 
     @property
+    def param_json(self) -> Optional[List[Dict]]:
+        """Return param json base on self.param."""
+        # Handle empty dict and None value
+        if not self.param:
+            return []
+        return [
+            {
+                "prop": k,
+                "direct": "IN",
+                "type": "VARCHAR",
+                "value": v,
+            }
+            for k, v in self.param.items()
+        ]
+
+    @property
     def task_definition_json(self) -> List[Dict]:
         """Return all tasks definition in list of dict."""
         if not self.tasks:
             return [self.tasks]
         else:
-            return [task.to_dict() for task in self.tasks.values()]
+            return [task.get_define() for task in self.tasks.values()]
 
     @property
     def task_relation_json(self) -> List[Dict]:
@@ -204,7 +221,7 @@ class ProcessDefinition(Base):
             return [self.tasks]
         else:
             self._handle_root_relation()
-            return [tr.to_dict() for tr in self._task_relations]
+            return [tr.get_define() for tr in self._task_relations]
 
     @property
     def schedule_json(self) -> Optional[Dict]:
@@ -323,16 +340,33 @@ class ProcessDefinition(Base):
         # Project model need User object exists
         self.project.create_if_not_exists(self._user)
 
+    def _pre_submit_check(self):
+        """Check specific condition satisfy before.
+
+        This method should be called before process definition submit to java gateway
+        For now, we have below checker:
+        * `self.param` should be set if task `switch` in this workflow.
+        """
+        if (
+            any([task.task_type == TaskType.SWITCH for task in self.tasks.values()])
+            and self.param is None
+        ):
+            raise PyDSParamException(
+                "Parameter param must be provider if task Switch in process definition."
+            )
+
     def submit(self) -> int:
         """Submit ProcessDefinition instance to java gateway."""
         self._ensure_side_model_exists()
+        self._pre_submit_check()
+
         gateway = launch_gateway()
         self._process_definition_code = gateway.entry_point.createOrUpdateProcessDefinition(
             self._user,
             self._project,
             self.name,
             str(self.description) if self.description else "",
-            str(self.param) if self.param else None,
+            json.dumps(self.param_json),
             json.dumps(self.schedule_json) if self.schedule_json else None,
             json.dumps(self.task_location),
             self.timeout,

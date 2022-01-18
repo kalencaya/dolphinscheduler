@@ -73,8 +73,8 @@ final class DolphinSchedulerExtension
     @Override
     @SuppressWarnings("UnstableApiUsage")
     public void beforeAll(ExtensionContext context) throws IOException {
-        Awaitility.setDefaultTimeout(Duration.ofSeconds(10));
-        Awaitility.setDefaultPollInterval(Duration.ofSeconds(1));
+        Awaitility.setDefaultTimeout(Duration.ofSeconds(60));
+        Awaitility.setDefaultPollInterval(Duration.ofSeconds(10));
 
         Network network = null;
         HostAndPort address = null;
@@ -193,7 +193,7 @@ final class DolphinSchedulerExtension
             .withPull(true)
             .withTailChildContainers(true)
             .withLogConsumer("dolphinscheduler_1", outputFrame -> LOGGER.info(outputFrame.getUtf8String()))
-            .waitingFor("dolphinscheduler_1", Wait.forHealthcheck());
+            .waitingFor("dolphinscheduler_1", Wait.forHealthcheck().withStartupTimeout(Duration.ofSeconds(180)));
 
         return compose;
     }
